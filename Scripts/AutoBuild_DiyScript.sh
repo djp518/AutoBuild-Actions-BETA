@@ -135,7 +135,7 @@ EOF
 		case "${TARGET_PROFILE}" in
 		x86_64)
 			Copy ${CustomFiles}/Depends/cpuset ${BASE_FILES}/bin
-			sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${FEEDS_PKG}/ttyd/files/ttyd.config
+			# sed -i "s?/bin/login?/usr/libexec/login.sh?g" ${FEEDS_PKG}/ttyd/files/ttyd.config
 			sed -i -- 's:/bin/ash:'/bin/bash':g' ${BASE_FILES}/etc/passwd
 			AddPackage passwall2-luci xiaorouji openwrt-passwall2 main
 			AddPackage other fw876 helloworld main
