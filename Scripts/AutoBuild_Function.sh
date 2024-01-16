@@ -5,21 +5,20 @@
 Firmware_Diy_Start() {
 	ECHO "[Firmware_Diy_Start] Starting ..."
 	WORK="${GITHUB_WORKSPACE}/openwrt"
-	CONFIG_TEMP="${GITHUB_WORKSPACE}/openwrt/.config"
+	CONFIG_TEMP="${WORK}/.config"
 	CD ${WORK}
+	OP_REPO="$(basename $(cut -d ':' -f1 <<< ${DEFAULT_SOURCE}))"
+	OP_AUTHOR="$(cut -d '/' -f1 <<< ${DEFAULT_SOURCE})"
+	OP_BRANCH="$(cut -d ':' -f2 <<< ${DEFAULT_SOURCE})"
 	Firmware_Diy_Core
 	[[ ${Short_Fw_Date} == true ]] && Compile_Date="$(cut -c1-8 <<< ${Compile_Date})"
-	Github="$(grep "https://github.com/[a-zA-Z0-9]" ${GITHUB_WORKSPACE}/.git/config | cut -c8-100 | sed 's/^[ \t]*//g')"
-	[[ -z ${Author} || ${Author} == AUTO ]] && Author="$(cut -d "/" -f4 <<< ${Github})"
-	OP_AUTHOR="$(cut -d "/" -f4 <<< ${REPO_URL})"
-	OP_REPO="$(cut -d "/" -f5 <<< ${REPO_URL})"
-	OP_BRANCH="$(Get_Branch)"
+	Github="$(egrep -o 'https://github.com/.+' ${GITHUB_WORKSPACE}/.git/config | awk 'NR==1')"
+	[[ -z ${Author} || ${Author} == AUTO ]] && Author="$(cut -d "/" -f4 <<< ${Github} | awk 'NR==1')"
 	if [[ ${OP_BRANCH} =~ (master|main) ]]
 	then
 		OP_VERSION_HEAD="R$(date +%y.%m)-"
 	else
-		OP_BRANCH="$(egrep -o "[0-9]+.[0-9]+" <<< ${OP_BRANCH} | awk 'NR==1')"
-		OP_VERSION_HEAD="R${OP_BRANCH}-"
+		OP_VERSION_HEAD="R$(egrep -o "[0-9]+.[0-9]+" <<< ${OP_BRANCH} | awk 'NR==1')-"
 	fi
 	case "${OP_AUTHOR}/${OP_REPO}" in
 	coolsnowwolf/lede)
@@ -27,7 +26,7 @@ Firmware_Diy_Start() {
 		zzz_Default_Version="$(egrep -o "R[0-9]+\.[0-9]+\.[0-9]+" ${Version_File})"
 		OP_VERSION="${zzz_Default_Version}-${Compile_Date}"
 	;;
-	immortalwrt/immortalwrt | padavanonly/immortalwrtARM)
+	immortalwrt/immortalwrt | padavanonly/immortalwrtARM | hanwckf/immortalwrt-mt798x)
 		Version_File=package/base-files/files/etc/openwrt_release
 		OP_VERSION="${OP_VERSION_HEAD}${Compile_Date}"
 	;;
@@ -35,7 +34,8 @@ Firmware_Diy_Start() {
 		OP_VERSION="${OP_VERSION_HEAD}${Compile_Date}"
 	;;
 	esac
-	while [[ -z ${x86_Test} ]];do
+	while [[ -z ${x86_Test} ]]
+	do
 		x86_Test="$(egrep -o "CONFIG_TARGET.*DEVICE.*=y" ${CONFIG_TEMP} | sed -r 's/CONFIG_TARGET_(.*)_DEVICE_(.*)=y/\1/')"
 		[[ -n ${x86_Test} ]] && break
 		x86_Test="$(egrep -o "CONFIG_TARGET.*Generic=y" ${CONFIG_TEMP} | sed -r 's/CONFIG_TARGET_(.*)_Generic=y/\1/')"
@@ -47,7 +47,6 @@ Firmware_Diy_Start() {
 	else
 		TARGET_PROFILE="$(egrep -o "CONFIG_TARGET.*DEVICE.*=y" ${CONFIG_TEMP} | sed -r 's/.*DEVICE_(.*)=y/\1/')"
 	fi
-	[[ -z ${TARGET_PROFILE} ]] && ECHO "Unable to get [TARGET_PROFILE] !"
 	TARGET_BOARD="$(awk -F '[="]+' '/TARGET_BOARD/{print $2}' ${CONFIG_TEMP})"
 	TARGET_SUBTARGET="$(awk -F '[="]+' '/TARGET_SUBTARGET/{print $2}' ${CONFIG_TEMP})"
 	if [[ -z ${Fw_MFormat} || ${Fw_MFormat} == AUTO ]]
@@ -98,6 +97,7 @@ Firmware_Diy_Start() {
 	cat >> ${GITHUB_ENV} <<EOF
 WORK=${WORK}
 CONFIG_TEMP=${CONFIG_TEMP}
+CONFIG_FILE=${CONFIG_FILE}
 AutoBuild_Features=${AutoBuild_Features}
 x86_Full_Images=${x86_Full_Images}
 AutoBuild_Fw=${AutoBuild_Fw}
@@ -113,17 +113,8 @@ Fw_MFormat=${Fw_MFormat}
 FEEDS_CONF=${WORK}/feeds.conf.default
 Author_URL=${Author_URL}
 ENV_FILE=${GITHUB_ENV}
+Compile_Date=${Compile_Date}
 
-EOF
-	source ${GITHUB_ENV}
-	echo -e "### VARIABLE LIST ###\n$(cat ${GITHUB_ENV})\n"
-	ECHO "[Firmware_Diy_Start] Done"
-}
-
-Firmware_Diy_Main() {
-	ECHO "[Firmware_Diy_Main] Starting ..."
-	CD ${WORK}
-	cat >> ${GITHUB_ENV} <<EOF
 Author=${Author}
 Github=${Github}
 TARGET_PROFILE=${TARGET_PROFILE}
@@ -134,8 +125,15 @@ OP_VERSION=${OP_VERSION}
 OP_AUTHOR=${OP_AUTHOR}
 OP_REPO=${OP_REPO}
 OP_BRANCH=${OP_BRANCH}
-
 EOF
+	echo -e "### VARIABLE LIST ###\n$(cat ${GITHUB_ENV})\n"
+	source ${GITHUB_ENV}
+	ECHO "[Firmware_Diy_Start] Done"
+}
+
+Firmware_Diy_Main() {
+	ECHO "[Firmware_Diy_Main] Starting ..."
+	CD ${WORK}
 	chmod 777 -R ${Scripts} ${CustomFiles}
 	if [[ ${AutoBuild_Features} == true ]]
 	then
@@ -169,8 +167,8 @@ EOF
 				sed -i "s?${zzz_Default_Version}?${zzz_Default_Version} @ ${Author} [${Display_Date}]?g" ${Version_File}
 			fi
 		;;
-		immortalwrt/immortalwrt | padavanonly/immortalwrtARM)
-			Copy ${CustomFiles}/Depends/openwrt_release_${OP_AUTHOR} ${BASE_FILES}/etc openwrt_release
+		immortalwrt/immortalwrt | padavanonly/immortalwrtARM | hanwckf/immortalwrt-mt798x)
+			Copy ${CustomFiles}/Depends/openwrt_release_immortalwrt ${BASE_FILES}/etc openwrt_release
 			if [[ -n ${TARGET_FLAG} ]]
 			then
 				sed -i "s?ImmortalWrt?ImmortalWrt ${TARGET_FLAG} @ ${Author} [${Display_Date}]?g" ${Version_File}
@@ -244,6 +242,9 @@ EOF
 			;;
 			padavanonly/immortalwrtARM*)
 				Patch_Path=${CustomFiles}/Patches/padavanonly-immortalwrtARM
+			;;
+			hanwckf/immortalwrt-mt798x*)
+				Patch_Path=${CustomFiles}/Patches/immortalwrt-mt798x
 			;;
 			esac
 			if [[ -d ${Patch_Path} ]]
@@ -420,12 +421,6 @@ Get_sha256() {
 	List_sha256 | grep $1 | awk '{print $1}' | cut -c1-5
 }
 
-Get_Branch() {
-    git -C $(pwd) rev-parse --abbrev-ref HEAD | grep -v HEAD || \
-    git -C $(pwd) describe --exact-match HEAD || \
-    git -C $(pwd) rev-parse HEAD
-}
-
 gz_Check() {
 	[[ $(cat ${CONFIG_TEMP}) =~ CONFIG_TARGET_IMAGES_GZIP=y ]] && {
 		echo img.gz
@@ -576,4 +571,84 @@ ReleaseDL() {
 		esac
 	done
 	rm -f ${API_FILE}
+}
+
+ClashDL() {
+	TMP_PATH=/opt/OpenClash
+	
+	PLATFORM=$1
+	CORE_TYPE=$2
+	
+	if [[ ! $(ls -1 $TMP_PATH) ]]
+	then
+		git clone -b core --depth=1 https://github.com/vernesong/OpenClash $TMP_PATH
+	fi
+	
+	case $CORE_TYPE in
+	dev | meta)
+		CORE_PATH=$TMP_PATH/dev/$CORE_TYPE
+	;;
+	premium | tun)
+		CORE_PATH=$TMP_PATH/dev/premium
+	;;
+	esac
+	
+	CORE=(
+		$(ls -1 $CORE_PATH | grep "clash-linux-$PLATFORM" | tr '\n' ' ')
+	)
+	
+	case $CORE_TYPE in
+	dev | meta)
+		IS_CORE="clash-linux-${PLATFORM}.tar.gz"
+		if [[ -f ${CORE_PATH}/${IS_CORE} ]]
+		then
+			TARGET_CORE=${IS_CORE}
+		fi
+	;;
+	*)
+		IS_CORE=$(ls -1 $CORE_PATH | egrep -o "clash-linux-${PLATFORM}-[0-9]{4}\.[0-9]{2}\.[0-9]{2}-[0-9]{2}-[A-Za-z0-9]+\.gz")
+		if [[ ${IS_CORE} && -f ${CORE_PATH}/${IS_CORE} ]]
+		then
+			TARGET_CORE=${IS_CORE}
+		fi
+	esac
+	
+	if [[ ! $TARGET_CORE ]]
+	then
+		ECHO "$PLATFORM $CORE_TYPE Not found"
+		for i in meta
+		do
+			cd $TMP_PATH/dev/$i
+			SUP_PLATDORM=$(ls -1 2> /dev/null | sed -r 's/clash-linux-(.*).tar.gz/\1/')
+			ECHO "CORE Supported platform: \n$SUP_PLATDORM"
+			cd - > /dev/null
+		done
+		return
+	else
+		ECHO "TARGET_CORE: $TARGET_CORE"
+	fi
+	MKDIR ${BASE_FILES}/etc/openclash/core
+	case $CORE_TYPE in
+	dev | meta)
+		tar -xvzf $CORE_PATH/$TARGET_CORE -C ${TMP_PATH}
+		if [[ $CORE_TYPE == dev ]]
+		then
+			chmod 777 ${TMP_PATH}/clash
+			mv -f ${TMP_PATH}/clash ${BASE_FILES}/etc/openclash/core/clash
+			ECHO "CORE Size: $(du -h ${BASE_FILES}/etc/openclash/core/clash)"
+		fi
+		if [[ $CORE_TYPE == meta ]]
+		then
+			chmod 777 ${TMP_PATH}/clash
+			mv -f ${TMP_PATH}/clash ${BASE_FILES}/etc/openclash/core/clash_meta
+			ECHO "CORE Size: $(du -h ${BASE_FILES}/etc/openclash/core/clash_meta)"
+		fi
+	;;
+	premium | tun)
+		gzip -dk -c $CORE_PATH/$TARGET_CORE > ${TMP_PATH}/clash_tun
+		chmod 777 ${TMP_PATH}/clash_tun
+		mv -f ${TMP_PATH}/clash_tun ${BASE_FILES}/etc/openclash/core/clash_tun
+		ECHO "CORE Size: $(du -h ${BASE_FILES}/etc/openclash/core/clash_tun)"
+	;;
+	esac
 }
