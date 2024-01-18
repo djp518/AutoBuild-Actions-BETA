@@ -72,6 +72,7 @@ Firmware_Diy() {
 	# ClashDL <platform> <core_type> [dev/tun/meta]
 	# ReleaseDL <release_url> <file> <target_path>
 	# Copy <cp_from> <cp_to > <rename>
+	# merge_package <git_branch> <git_repo_url> <package_path> <target_path>..
 	
 	case "${OP_AUTHOR}/${OP_REPO}:${OP_BRANCH}" in
 	coolsnowwolf/lede:master)
@@ -106,7 +107,7 @@ EOF
 
 		case "${CONFIG_FILE}" in
 		d-team_newifi-d2-Clash | xiaoyu_xy-c5-Clash)
-			ClashDL mipsle-hardfloat dev
+			ClashDL mipsle-hardfloat tun
 		;;
 		esac
 			
@@ -124,7 +125,6 @@ EOF
 			AddPackage passwall2-luci xiaorouji openwrt-passwall2 main
 			#rm -rf packages/lean/autocore
 			#AddPackage lean Hyy2001X autocore-modify master
-			sed -i -- 's:/bin/ash:'/bin/bash':g' ${BASE_FILES}/etc/passwd
 
 			singbox_version="1.8.1"
 			hysteria_version="2.2.3"
@@ -180,7 +180,7 @@ EOF
 	hanwckf/immortalwrt-mt798x*)
 		case "${TARGET_PROFILE}" in
 		cmcc_rax3000m)
-			:
+			AddPackage passwall2-luci xiaorouji openwrt-passwall2 main
 		;;
 		esac
 	;;
