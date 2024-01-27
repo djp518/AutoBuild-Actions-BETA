@@ -126,8 +126,8 @@ EOF
 			#rm -rf packages/lean/autocore
 			#AddPackage lean Hyy2001X autocore-modify master
 
-			singbox_version="1.8.1"
-			hysteria_version="2.2.3"
+			singbox_version="1.8.4"
+			hysteria_version="2.2.4"
 			naiveproxy_version="119.0.6045.66-1"
 
 			wget --quiet --no-check-certificate -P /tmp \
