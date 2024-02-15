@@ -97,6 +97,8 @@ EOF
 		AddPackage other jerrykuku luci-app-argon-config master
 		AddPackage other fw876 helloworld main
 		AddPackage themes thinktip luci-theme-neobird main
+		rm -r ${FEEDS_PKG}/curl
+		Copy ${CustomFiles}/curl ${FEEDS_PKG}
 		
 		case "${TARGET_BOARD}" in
 		ramips)
@@ -122,6 +124,7 @@ EOF
 			Copy ${CustomFiles}/Depends/cpuset ${BASE_FILES}/bin
 			rm -r ${WORK}/package/other/helloworld/mosdns
 			rm -r ${FEEDS_PKG}/mosdns
+			rm -r ${FEEDS_LUCI}/luci-app-mosdns
 			AddPackage other sbwml luci-app-mosdns v5
 			AddPackage passwall-depends xiaorouji openwrt-passwall-packages main
 			AddPackage passwall-luci xiaorouji openwrt-passwall main
@@ -179,7 +182,10 @@ EOF
 	hanwckf/immortalwrt-mt798x*)
 		case "${TARGET_PROFILE}" in
 		cmcc_rax3000m)
-			:
+			AddPackage passwall-luci xiaorouji openwrt-passwall main
+			AddPackage passwall-depends xiaorouji openwrt-passwall-packages main
+			rm -r ${FEEDS_LUCI}/luci-app-passwall
+			rm -r ${FEEDS_PKG}/xray-core
 		;;
 		esac
 	;;
