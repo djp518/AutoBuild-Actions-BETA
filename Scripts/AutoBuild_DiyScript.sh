@@ -131,6 +131,7 @@ EOF
 			Copy ${CustomFiles}/${TARGET_PROFILE}_system ${BASE_FILES}/etc/config system
 		;;
 		x86_64)
+			sed -i "s?6.1?5.15?g" ${WORK}/target/linux/x86/Makefile
 			ClashDL amd64 dev
 			ClashDL amd64 tun
 			ClashDL amd64 meta
@@ -143,8 +144,8 @@ EOF
 			# rm -rf packages/lean/autocore
 			# AddPackage lean Hyy2001X autocore-modify master
 
-			singbox_version="1.8.7"
-			hysteria_version="2.2.4"
+			singbox_version="1.8.9"
+			hysteria_version="2.3.0"
 			wget --quiet --no-check-certificate -P /tmp \
 				https://github.com/SagerNet/sing-box/releases/download/v${singbox_version}/sing-box-${singbox_version}-linux-amd64.tar.gz
 			wget --quiet --no-check-certificate -P /tmp \
@@ -197,6 +198,7 @@ EOF
 		cmcc_rax3000m)
 			AddPackage passwall xiaorouji openwrt-passwall main
 			rm -r ${FEEDS_LUCI}/luci-app-passwall
+			Copy ${CustomFiles}/020-wapp-btm--steering.patch ${WORK}/package/mtk/drivers/mt_wifi/patches
 		;;
 		esac
 	;;
