@@ -132,7 +132,7 @@ EOF
 			Copy ${CustomFiles}/${TARGET_PROFILE}_system ${BASE_FILES}/etc/config system
 		;;
 		x86_64)
-			sed -i "s?6.1?5.15?g" ${WORK}/target/linux/x86/Makefile
+			sed -i "s?6.1?6.6?g" ${WORK}/target/linux/x86/Makefile
 			ClashDL amd64 dev
 			ClashDL amd64 tun
 			ClashDL amd64 meta
@@ -174,6 +174,7 @@ EOF
 				rm -r ${FEEDS_PKG}/xray-plugin
 				AddPackage other sbwml luci-app-mosdns v5
 				rm -r ${WORK}/package/other/luci-app-mosdns/mosdns
+				patch < ${CustomFiles}/mt7981/0001-Add-iptables-socket.patch -p1 -d ${WORK}
 			;;
 			esac
 		;;
@@ -203,9 +204,9 @@ EOF
 		ReleaseDL https://api.github.com/repos/nxtrace/NTrace-core/releases/latest nexttrace_linux_amd64 ${BASE_FILES}/bin nexttrace
 		Copy ${CustomFiles}/Depends/cpuset ${BASE_FILES}/bin
 		
-		singbox_version="1.8.10"
-		hysteria_version="2.4.0"
-		wstunnel_version="9.2.5"
+		singbox_version="1.8.11"
+		hysteria_version="2.4.1"
+		wstunnel_version="9.3.0"
 		wget --quiet --no-check-certificate -P /tmp \
 			https://github.com/SagerNet/sing-box/releases/download/v${singbox_version}/sing-box-${singbox_version}-linux-amd64.tar.gz
 		wget --quiet --no-check-certificate -P /tmp \
